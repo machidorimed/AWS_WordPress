@@ -8,6 +8,15 @@ terraform {
   }
 }
 
+# backend
+terraform {
+  backend "s3" {
+    bucket = "aws-study-marube23-backet"
+    key    = "terraform.tfstate"
+    region = "ap-northeast-1"
+  }
+}
+
 provider "aws" {
   region = "ap-northeast-1"
 }
