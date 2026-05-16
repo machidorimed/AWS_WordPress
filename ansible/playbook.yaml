@@ -10,8 +10,8 @@
     - name: Gather facts after connection
       setup:
 
-  tasks:
-    - name: Install Ruby
-      dnf:
-        name: ruby
-        state: present
+  roles:
+    - apache
+    #- php
+    #- mysql
+    #- wordpress
