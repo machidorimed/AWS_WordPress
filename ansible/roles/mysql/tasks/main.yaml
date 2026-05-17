@@ -110,8 +110,7 @@
         block: |
           slow_query_log = 1
           slow_query_log_file = {{ mysql_slow_query_log_file }}
-          long_query_time = {{ mysql_long_query_time }}
-          long_queries_not_using_indexes = 1
+          long_query_time = {{ mysql_long_query_time }} 
         marker: "# {mark} ANSIBLE MANAGED SLOW QUERY LOG CONFIG"
         insertafter: '[mysqld]'
       notify: Restart mysqld
