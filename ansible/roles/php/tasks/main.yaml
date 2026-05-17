@@ -1,44 +1,71 @@
-    # アプリケーションインストール
-    - name: Clone repository
-      git:
-        repo: "{{ repo_url }}"
-        dest: "{{ app_dir }}"
-        version: main
-        force: yes
+    # EPEL インストール
+    - name: Install EPEL repository
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
 
-    # application.properties を templates に書き換え
-    - name: Replace application.properties
-      template:
-        src: application.properties.j2
-        dest: "{{ app_dir }}/src/main/resources/application.properties"
-        owner: ec2-user
-        group: ec2-user
+    # Remi GPGキーペア取得
+    - name: Import Remi GPG key
+      ansible.builtin.rpm_key:
+        key: https://rpms.remirepo.net/enterprise/9/RPM-GPG-KEY-remi
+        state: present
+
+    # Remi インストール
+    - name: Install Remi repository
+      ansible.builtin.dnf:
+        name: https://rpms.remirepo.net/enterprise/remi-release-9.rpm
+        state: present
+
+    # PHP-8.3 有効化
+    - name: Specify Remi modularity for dnf
+      ansible.builtin.dnf:
+        name: '@php:remi-8.3'
+        state: present
+
+    # PHP パッケージインストール
+    - name: Install PHP and extensions
+      ansible.builtin.dnf:
+        name: 
+          - php 
+          - php-pdo
+          - php-mysqlnd
+          - php-fpm
+          - php-mbstring
+        state: present
+      notify: Restart Apache
+
+    # PHP-FPM 自動起動
+    - name: Start and enable PHP-FPM service
+      systemd:
+        name: php-fpm
+        state: started
+        enabled: yes
+
+    # タイムゾーン設定
+    - name: Set timezone in php.ini
+      ansible.builtin.lineinfile:
+        path: /etc/php.ini 
+        regexp: '^;?date.timezone\s*='
+        line: 'date.timezone = Asia/Tokyo'
+        state: present
+        backup: yes
+      notify: Restart PHP-FPM
+
+    # PHP バージョン非表示化
+    - name: Disable expose_php in php.ini
+      ansible.builtin.lineinfile:
+        path: /etc/php.ini 
+        regexp: '^;?expose_php\s*='
+        line: 'expose_php = off'
+        state: present
+        backup: yes
+      notify: Restart PHP-FPM
+
+    # Apache テストページ内に PHP インフォメーションファイル追加
+    - name: Deploy phpinfo file to Apache document root
+      ansible.builtin.copy: 
+        dest: /var/www/html/info.php
+        content: "<?php\nphpinfo();\n"
+        owner: apache
+        group: apache
         mode: '0644'
-    
-    - name: Copy init.sql
-      template:
-        src: init.sql.j2
-        dest: /tmp/init.sql
-
-    # データベース内に必要な値を入力
-    - name: Initialize database
-      shell: >
-        mysql \
-        -h {{ rds_endpoint }} \
-        -u {{ db_username }} \
-        -p'{{ db_password }}' 
-        < /tmp/init.sql
-
-    # 必要な権限を付与
-    - name: Make gradlew executable
-      file:
-        path: "{{ app_dir }}/gradlew"
-        mode: '0755'
-
-    - name: Build with Gradle
-      shell: ./gradlew build --no-daemon
-      args:
-        chdir: "{{ app_dir }}"
-      async: 600
-      poll: 0  
-    
