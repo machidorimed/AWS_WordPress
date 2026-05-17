@@ -13,5 +13,5 @@
   roles:
     - apache
     - php
-    #- mysql
+    - mysql
     #- wordpress
