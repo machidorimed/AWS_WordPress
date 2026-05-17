@@ -55,14 +55,13 @@
     
     # rootユーザーのパスワードリセット
     - name: update expire root user password
-      ansible.builtin.command: >
+      ansible.builtin.shell: >
         mysql
         --user=root
-        --password={{ mysql_temp_pass.stdout }}
+        --password='{{ mysql_temp_pass.stdout }}'
         --connect-expired-password
         -e "ALTER USER 'root'@'localhost'
         IDENTIFIED BY '{{ mysql_root_password }}';"
-      no_log: true
     
     # anonymous ユーザー消去
     - name: Remove anonymous MySQL users
