@@ -1,5 +1,5 @@
     # 設定ファイル変更時のみ mysql リスタート
-    - name: Restart mysql
+    - name: Restart mysqld
       systemd:
         name: mysqld
         state: restarted
